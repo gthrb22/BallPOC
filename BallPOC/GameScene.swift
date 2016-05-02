@@ -9,8 +9,8 @@
 import SpriteKit
 
 class GameScene: SKScene {
-    var shape:SKShapeNode?
   
+    var i = 0
   override func didMoveToView(view: SKView) {
       
       let physicsBody = SKPhysicsBody (edgeLoopFromRect: self.frame)
@@ -26,34 +26,35 @@ class GameScene: SKScene {
     }
   func addBallsToScene(){
     
-    self.physicsWorld.speed = 1.0
+    
     self.physicsWorld.gravity = CGVectorMake(0, 0)
-    shape = SKShapeNode(circleOfRadius:50)
+    let shape = SKShapeNode(circleOfRadius:50)
     // we set the color and line style
-    shape!.name = "Ball"
-    shape!.fillColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.5)
-    shape!.strokeColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.5)
-    shape!.lineWidth = 1
+    shape.name = "Ball\(i)"
+    print(shape.name)
+    shape.fillColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.5)
+    shape.strokeColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.5)
+    shape.lineWidth = 1
     // we create a text node to embed text in our ball
     let text = SKLabelNode(text: "Tap to Hold")
     // we set the font
     text.fontSize = 15.0
     text.fontName = "Chalkduster"
     // we nest the text label in our ball
-    shape!.addChild(text)
-    shape!.position = CGPointMake(size.width/2, size.height/2)
-    addChild(shape!)
-    shape!.physicsBody = SKPhysicsBody(circleOfRadius: shape!.frame.size.width/2)
+    shape.addChild(text)
+    shape.position = CGPointMake(size.width/2, size.height/2)
+    addChild(shape)
+    shape.physicsBody = SKPhysicsBody(circleOfRadius: shape.frame.size.width/2)
     // this defines the mass, roughness and bounciness
-    shape!.physicsBody!.friction = 0
-    shape!.physicsBody!.restitution = 1
-    shape!.physicsBody?.linearDamping = 0
-    shape!.physicsBody?.angularDamping = 0
-    shape!.physicsBody!.mass = 0.03
+    shape.physicsBody!.friction = 0
+    shape.physicsBody!.restitution = 1
+    shape.physicsBody?.linearDamping = 0
+    shape.physicsBody?.angularDamping = 0
+    shape.physicsBody!.mass = 0.03
     // this will allow the balls to rotate when bouncing off each other
-    shape!.physicsBody!.allowsRotation = false
-    shape!.physicsBody!.applyImpulse(CGVectorMake(10, -10))
-    
+    shape.physicsBody!.allowsRotation = false
+    shape.physicsBody!.applyImpulse(CGVectorMake(10, -10))
+    i+=1
   }
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
        /* Called when a touch begins */
@@ -64,11 +65,11 @@ class GameScene: SKScene {
           
           if let name = touchedNode.name
           {
-            if name == "Ball"
+            if name.containsString("Ball")
             {
-              print("Touched")
-             shape?.physicsBody = nil
-              
+             print("Touched")
+             touchedNode.physicsBody = nil
+             addBallsToScene()
             }
             else{
               print("Not Touched")
@@ -79,17 +80,19 @@ class GameScene: SKScene {
         }
     }
   override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
-    shape!.physicsBody = SKPhysicsBody(circleOfRadius: shape!.frame.size.width/2)
+    let location = touches.first!.locationInNode(self)
+    let touchedNode = self.nodeAtPoint(location)
+    touchedNode.physicsBody = SKPhysicsBody(circleOfRadius: touchedNode.frame.size.width/2)
     // this defines the mass, roughness and bounciness
-    shape!.physicsBody!.friction = 0
-    shape!.physicsBody!.restitution = 1
-    shape!.physicsBody?.linearDamping = 0
-    shape!.physicsBody?.angularDamping = 0
-    shape!.physicsBody!.mass = 0.03
+    touchedNode.physicsBody!.friction = 0
+    touchedNode.physicsBody!.restitution = 1
+    touchedNode.physicsBody?.linearDamping = 0
+    touchedNode.physicsBody?.angularDamping = 0
+    touchedNode.physicsBody!.mass = 0.03
     // this will allow the balls to rotate when bouncing off each other
-    shape!.physicsBody!.allowsRotation = false
-    shape!.physicsBody!.applyImpulse(CGVectorMake(10, -10))
-      
+    touchedNode.physicsBody!.allowsRotation = false
+    touchedNode.physicsBody!.applyImpulse(CGVectorMake(10, -10))
+   
 
   }
   
