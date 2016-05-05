@@ -11,21 +11,23 @@ import SpriteKit
 class GameScene: SKScene {
   
     var i = 0
+   let sceneCategory: UInt32 = 0x1 << 2
+   let ballCategory: UInt32 = 0x1 << 1
+  
   override func didMoveToView(view: SKView) {
       
-      let physicsBody = SKPhysicsBody (edgeLoopFromRect: self.frame)
-      physicsBody.friction = 0
-      physicsBody.angularDamping = 0
-      physicsBody.linearDamping = 0
-      physicsBody.allowsRotation = false
-      physicsBody.restitution = 1.0
+     let physicsbody = SKPhysicsBody (edgeLoopFromRect: self.frame)
+      physicsbody.friction = 0
+      physicsbody.angularDamping = 0
+      physicsbody.linearDamping = 0
+      physicsbody.allowsRotation = false
+      physicsbody.restitution = 1.0
+      physicsBody!.categoryBitMask = sceneCategory
       // we set the body defining the physics to our scene
-      self.physicsBody = physicsBody
-      
+      self.physicsBody = physicsbody
       addBallsToScene()
     }
   func addBallsToScene(){
-    
     
     self.physicsWorld.gravity = CGVectorMake(0, 0)
     let shape = SKShapeNode(circleOfRadius:50)
@@ -40,6 +42,7 @@ class GameScene: SKScene {
     // we set the font
     text.fontSize = 15.0
     text.fontName = "Chalkduster"
+    text.userInteractionEnabled = false
     // we nest the text label in our ball
     shape.addChild(text)
     shape.position = CGPointMake(size.width/2, size.height/2)
@@ -51,9 +54,15 @@ class GameScene: SKScene {
     shape.physicsBody?.linearDamping = 0
     shape.physicsBody?.angularDamping = 0
     shape.physicsBody!.mass = 0.03
+    shape.physicsBody!.dynamic = true
+    shape.physicsBody!.categoryBitMask = ballCategory
+ 
+    shape.physicsBody!.collisionBitMask = sceneCategory
+    
+    shape.physicsBody!.affectedByGravity = false
     // this will allow the balls to rotate when bouncing off each other
     shape.physicsBody!.allowsRotation = false
-    shape.physicsBody!.applyImpulse(CGVectorMake(10, -10))
+    shape.physicsBody!.applyImpulse(CGVectorMake(20, -20))
     i+=1
   }
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
@@ -67,9 +76,10 @@ class GameScene: SKScene {
           {
             if name.containsString("Ball")
             {
-             print("Touched")
-             touchedNode.physicsBody = nil
-             addBallsToScene()
+             print("Touched \(name)")
+             touchedNode.physicsBody?.dynamic = false
+             if (i < 4)
+             {addBallsToScene()}
             }
             else{
               print("Not Touched")
@@ -80,20 +90,14 @@ class GameScene: SKScene {
         }
     }
   override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
-    let location = touches.first!.locationInNode(self)
-    let touchedNode = self.nodeAtPoint(location)
-    touchedNode.physicsBody = SKPhysicsBody(circleOfRadius: touchedNode.frame.size.width/2)
-    // this defines the mass, roughness and bounciness
-    touchedNode.physicsBody!.friction = 0
-    touchedNode.physicsBody!.restitution = 1
-    touchedNode.physicsBody?.linearDamping = 0
-    touchedNode.physicsBody?.angularDamping = 0
-    touchedNode.physicsBody!.mass = 0.03
-    // this will allow the balls to rotate when bouncing off each other
-    touchedNode.physicsBody!.allowsRotation = false
-    touchedNode.physicsBody!.applyImpulse(CGVectorMake(10, -10))
-   
-
+    for touch: AnyObject in touches {
+      let location = (touch as! UITouch).locationInNode(self)
+      let touchedNode = self.nodeAtPoint(location)
+      print("Untouched\(touchedNode.name)")
+      touchedNode.physicsBody?.dynamic = true
+      touchedNode.physicsBody?.applyImpulse(CGVectorMake(20, -20))
+    }
+    
   }
   
     override func update(currentTime: CFTimeInterval) {
