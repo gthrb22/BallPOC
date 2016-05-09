@@ -16,7 +16,7 @@ class GameScene: SKScene {
   let freeBallCategory: UInt32 = 0x1 << 3
   let explosionSound = SKAction.playSoundFileNamed("explosion.mp3", waitForCompletion: false)
   var gameOver = false
-  var freeBallCount = 0
+  var freeBallDestroyed = 0
   let appDelegate = UIApplication.sharedApplication().delegate  as! AppDelegate
   var touchedTapToHoldBall = 0
   override init(size: CGSize) {
@@ -30,7 +30,9 @@ class GameScene: SKScene {
     physicsbody1.categoryBitMask = sceneCategory
     // we set the body defining the physics to our scene
     self.physicsBody = physicsbody1
+    if appDelegate.levelCompletion < 5 {
     addTapToHoldBalls(appDelegate.levelCompletion + 1)
+    }
   }
   
   required init?(coder aDecoder: NSCoder) {
@@ -81,8 +83,8 @@ class GameScene: SKScene {
     let yRange = size.height - viewSize.height
     let minX = (size.width - xRange)/2
     let minY = (size.height - yRange)/2
-    let randomX = (Int(arc4random()) % Int(floorf(Float(xRange)))) + Int(minX)
-    let randomY = (Int(arc4random()) % Int(floorf(Float(yRange)))) + Int(minY)
+    let randomX = Int((UInt32(arc4random())) % UInt32(floorf(Float(xRange)))) + Int(minX)
+    let randomY = Int((UInt32(arc4random())) % UInt32(floorf(Float(yRange)))) + Int(minY)
     return CGPointMake(CGFloat(randomX), CGFloat(randomY))
   }
   func endGame(completedLevel:String) {
@@ -101,26 +103,27 @@ class GameScene: SKScene {
   }
   override func update(currentTime: CFTimeInterval) {
     //1
+    print(freeBallDestroyed)
     if !gameOver {
   
       switch appDelegate.levelCompletion {
       case 0:
-        if (freeBallCount>1 && freeBallCount == 17) {
+        if (freeBallDestroyed>1 && freeBallDestroyed == 30) {
           endGame("Level 1 Completed :)")
           appDelegate.levelCompletion = 1        }
       
       case 1 :
-       if (freeBallCount>1 && freeBallCount == 17) {
+       if (freeBallDestroyed>1 && freeBallDestroyed == 30) {
           endGame("Level 2 Completed :)")
           appDelegate.levelCompletion = 2
         }
       case 2 :
-        if (freeBallCount>1 && freeBallCount == 17) {
+        if (freeBallDestroyed>1 && freeBallDestroyed == 30) {
           endGame("Level 3 Completed :)")
           appDelegate.levelCompletion = 3
         }
       case 3 :
-        if (freeBallCount>1 && freeBallCount == 17) {
+        if (freeBallDestroyed>1 && freeBallDestroyed == 20) {
           endGame("Level 4 Completed :)")
           appDelegate.levelCompletion = 4
         }
@@ -134,23 +137,35 @@ class GameScene: SKScene {
       
   }
   }
+  func random() -> CGFloat {
+    return CGFloat(Float(arc4random()) / 0xFFFFFFFF)
+  }
+  func random(min: CGFloat, max: CGFloat) -> CGFloat {
+    return random() * (max - min) + min
+  }
+  
   func addFreeBalls(){
-    for _ in 0...45{
+   
       let shape = SKShapeNode(circleOfRadius:30)
+    
       // we set the color and line style
       shape.name = "Free"
-      print(shape.name)
+
       shape.fillColor = UIColor(red: 0, green: 0, blue: 255, alpha: 0.5)
       shape.strokeColor = UIColor(red: 0, green: 0, blue: 255, alpha: 0.5)
       shape.lineWidth = 1
+      shape.position = CGPoint(x: frame.size.width + shape.frame.size.width/2,
+                            y: frame.size.height * random(0, max: 1))
     
-      // Position the monster slightly off-screen along the right edge,
-      // and along a random position along the Y axis as calculated above
-      shape.position = randomPointWithContainerSize(self.size, viewSize: shape.frame.size)
-      
+    // 5
       addChild(shape)
-      freeBallCount+=1
+    
+      shape.runAction(
+      SKAction.moveByX(-size.width - shape.frame.size.width, y: 0.0,
+        duration: NSTimeInterval(random(1, max: 2))))
+  
       shape.physicsBody = SKPhysicsBody(circleOfRadius: shape.frame.size.width/2)
+      shape.physicsBody?.affectedByGravity = true
       // this defines the mass, roughness and bounciness
       shape.physicsBody!.friction = 0
       shape.physicsBody!.restitution = 1
@@ -158,15 +173,9 @@ class GameScene: SKScene {
       shape.physicsBody?.angularDamping = 0
       shape.physicsBody!.mass = 0.03
       shape.physicsBody!.dynamic = true
-      shape.physicsBody!.categoryBitMask = freeBallCategory
-      shape.physicsBody!.collisionBitMask = sceneCategory|ballCategory
-      shape.physicsBody!.usesPreciseCollisionDetection = true
-      shape.physicsBody!.affectedByGravity = false
-      // this will allow the balls to rotate when bouncing off each other
       shape.physicsBody!.allowsRotation = false
-      shape.physicsBody!.applyImpulse(CGVectorMake(20, -20))
-      
-    }
+      shape.physicsBody?.collisionBitMask = 0
+    
   }
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
        /* Called when a touch begins */
@@ -183,20 +192,26 @@ class GameScene: SKScene {
               print("Touched Hold \(name)")
               touchedNode.physicsBody?.dynamic = false
               if (touchedTapToHoldBall == appDelegate.levelCompletion+1){
-               addFreeBalls()
+                runAction(SKAction.repeatActionForever(
+                  SKAction.sequence([
+                    SKAction.runBlock(addFreeBalls),
+                    SKAction.waitForDuration(1.0)])))
               }
-            }
+              }
             else if name.containsString("Free"){
               print("Touched Free\(name)")
-              touchedNode.runAction(explosionSound)
+              runAction(explosionSound)
               touchedNode.removeFromParent()
-              freeBallCount-=1
+              freeBallDestroyed+=1
+               print(freeBallDestroyed)
             }
+            }
+          
           }
 
           
         }
-    }
+  
   override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
     for touch: AnyObject in touches {
       let location = (touch as! UITouch).locationInNode(self)
