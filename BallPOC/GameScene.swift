@@ -45,7 +45,7 @@ class GameScene: SKScene {
     let shape = SKShapeNode(circleOfRadius:40)
     // we set the color and line style
     shape.name = "Hold\(i)"
-    print(shape.name)
+   
     shape.fillColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.5)
     shape.strokeColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.5)
     shape.lineWidth = 1
@@ -218,6 +218,7 @@ class GameScene: SKScene {
       let touchedNode = self.nodeAtPoint(location)
       print("Untouched\(touchedNode.name)")
       if (touchedNode.name?.containsString("Hold") == true){
+      touchedTapToHoldBall-=1
       endGame("Sorry :( Game Over")
       touchedNode.physicsBody?.dynamic = true
       touchedNode.physicsBody?.applyImpulse(CGVectorMake(20, -20))
